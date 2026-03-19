@@ -1,0 +1,32 @@
+name: F-Droid Build
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '17'
+
+jobs:
+  fdroid:
+    name: F-Droid Build
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/fdroidserver/buildserver:latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build F-Droid
+      run: |
+        mkdir -p fdroid
+        cd fdroid
+        fdroid init
+        fdroid build --verbose
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: fdroid-apk
+        path: fdroid/*.apk
