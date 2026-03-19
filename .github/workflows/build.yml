@@ -1,0 +1,239 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+          - fdroid
+
+env:
+  JAVA_VERSION: '17'
+  ANDROID_API_LEVEL: '34'
+
+jobs:
+  # ========== 代码质量检查 ==========
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Run Lint
+      run: ./gradlew lintFdroidDebug
+
+    - name: Upload Lint Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: lint-results
+        path: app/build/reports/lint*.html
+
+  # ========== 构建 F-Droid 版本 ==========
+  build-fdroid:
+    name: Build F-Droid
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Cache Gradle
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        restore-keys: ${{ runner.os }}-gradle-
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew
+
+    - name: Build F-Droid Debug
+      run: ./gradlew assembleFdroidDebug
+
+    - name: Build F-Droid Release
+      run: ./gradlew assembleFdroidRelease
+
+    - name: Verify No Tracking Libraries
+      run: |
+        echo "Checking for tracking libraries..."
+        APK="app/build/outputs/apk/fdroid/release/app-fdroid-release.apk"
+        if [ -f "$APK" ]; then
+          # Check for known tracking libraries
+          if unzip -l "$APK" | grep -iE "(firebase|analytics|crashlytics|play-services)"; then
+            echo "❌ Found tracking libraries!"
+            exit 1
+          else
+            echo "✅ No tracking libraries found"
+          fi
+        fi
+
+    - name: List APK Permissions
+      run: |
+        APK="app/build/outputs/apk/fdroid/release/app-fdroid-release.apk"
+        if [ -f "$APK" ]; then
+          echo "=== APK Permissions ==="
+          aapt dump permissions "$APK" || true
+          echo ""
+          echo "=== APK Info ==="
+          ls -lh "$APK"
+        fi
+
+    - name: Upload F-Droid Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: fdroid-debug
+        path: app/build/outputs/apk/fdroid/debug/*.apk
+
+    - name: Upload F-Droid Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: fdroid-release
+        path: app/build/outputs/apk/fdroid/release/*.apk
+
+  # ========== 构建 Play 版本 ==========
+  build-play:
+    name: Build Play Store
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Build Play Release
+      run: ./gradlew assemblePlayRelease
+
+    - name: Upload Play Release
+      uses: actions/upload-artifact@v4
+      with:
+        name: play-release
+        path: app/build/outputs/apk/play/release/*.apk
+
+  # ========== 发布到 GitHub Releases ==========
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-fdroid, build-play]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Download Artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Generate Checksums
+      run: |
+        echo "=== Generating Checksums ==="
+        for dir in fdroid-* play-*; do
+          if [ -d "$dir" ]; then
+            for apk in "$dir"/*.apk; do
+              sha256sum "$apk" >> checksums.txt
+            done
+          fi
+        done
+        cat checksums.txt
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          fdroid-*/*.apk
+          play-*/*.apk
+          checksums.txt
+        body: |
+          ## CClaude Android ${{ github.ref_name }}
+          
+          ### 🔒 Privacy-First AI Assistant
+          
+          #### Downloads
+          - **F-Droid Version** (Recommended): Zero tracking, full privacy
+          - **Play Store Version**: Standard build
+          
+          #### What's Included
+          - 🤖 Claude AI chat interface
+          - 💾 Local conversation storage
+          - 🛡️ Security sandbox with approval modes
+          - 🌙 Material Design 3 UI
+          - 📱 Multi-arch support (arm64, armv7, x86_64)
+          
+          #### Privacy Verification
+          ```bash
+          # Verify no tracking libraries
+          unzip -l CClaude-*.apk | grep -iE "(firebase|analytics)" || echo "✅ Clean"
+          
+          # Verify checksum
+          sha256sum -c checksums.txt
+          ```
+          
+          #### F-Droid
+          Also available on F-Droid: https://f-droid.org/packages/com.cclaude.android
+        draft: false
+        prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+
+  # ========== F-Droid 元数据更新 ==========
+  update-fdroid-metadata:
+    name: Update F-Droid Metadata
+    runs-on: ubuntu-latest
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Update Version in Metadata
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "Updating metadata for version $VERSION"
+        # Update metadata file (if needed)
+        
+    - name: Trigger F-Droid Build
+      run: |
+        echo "F-Droid will auto-detect this release via RSS/Atom feed"
+        echo "Check: https://f-droid.org/packages/com.cclaude.android"

@@ -1,0 +1,35 @@
+name: Build F-Droid
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+jobs:
+  build-fdroid:
+    name: Build F-Droid Version
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup F-Droid
+      run: |
+        mkdir -p fdroid
+        cd fdroid
+        fdroid init
+
+    - name: Build with F-Droid
+      run: |
+        cd fdroid
+        fdroid build --verbose
+
+    - name: Upload F-Droid APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: fdroid-apk
+        path: fdroid/unsigned/*.apk
