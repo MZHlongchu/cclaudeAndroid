@@ -1,0 +1,1 @@
+Privacy-first AI assistant powered by Claude. Zero tracking, local storage, open source.
