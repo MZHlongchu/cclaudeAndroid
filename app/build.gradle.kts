@@ -40,7 +40,6 @@ android {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.debug
         }
         debug {
             isDebuggable = true
