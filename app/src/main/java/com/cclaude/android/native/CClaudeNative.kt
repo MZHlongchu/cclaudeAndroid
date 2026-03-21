@@ -45,13 +45,15 @@ class CClaudeNative {
         return if (!configured) {
             "CClaude 尚未完成配置，请先设置 API Key。"
         } else {
-            "[CClaude Android]
-模型: $model
-审批模式: $approvalMode
-
-你说: $message
-
-当前为可构建演示版本，已完成 UI / 数据层 / 打包链路，可继续接入完整 JNI 调用。"
+            buildString {
+                appendLine("[CClaude Android]")
+                appendLine("模型: $model")
+                appendLine("审批模式: $approvalMode")
+                appendLine()
+                appendLine("你说: $message")
+                appendLine()
+                append("当前为可构建演示版本，已完成 UI / 数据层 / 打包链路，可继续接入完整 JNI 调用。")
+            }
         }
     }
 
