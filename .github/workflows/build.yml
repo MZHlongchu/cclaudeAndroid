@@ -15,34 +15,22 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-
     - name: Setup JDK
       uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
-
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
-
     - name: Make gradlew executable
       run: chmod +x gradlew
-
     - name: Build Debug APK
-      run: ./gradlew assembleFdroidDebug 2>&1 || true
-
-    - name: Check APK Output
-      run: |
-        echo "=== APK Output ==="
-        find app/build -name "*.apk" || echo "No APK"
-
+      run: ./gradlew assembleFdroidDebug 2>&1
+    - name: List APK
+      run: find app/build -name "*.apk"
     - name: Upload APK
-      if: always()
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: cclaude-debug
-        path: |
-          app/build/outputs/apk/fdroid/debug/*.apk
-          app/build/outputs/apk/debug/*.apk
-          app/build/outputs/apk/release/*.apk
-        retention-days: 5
+        path: app/build/outputs/apk/fdroid/debug/*.apk
