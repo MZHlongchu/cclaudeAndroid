@@ -1,16 +1,37 @@
 package com.cclaude.android.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-nimport androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,7 +47,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    
+
     val apiKey by viewModel.apiKey.collectAsStateWithLifecycle()
     val baseUrl by viewModel.baseUrl.collectAsStateWithLifecycle()
     val model by viewModel.model.collectAsStateWithLifecycle()
@@ -34,11 +55,11 @@ fun SettingsScreen(
     val maxTokens by viewModel.maxTokens.collectAsStateWithLifecycle()
     val temperature by viewModel.temperature.collectAsStateWithLifecycle()
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
-    
-    var apiKeyInput by remember { mutableStateOf(apiKey) }
-    var baseUrlInput by remember { mutableStateOf(baseUrl) }
-    var modelInput by remember { mutableStateOf(model) }
-    
+
+    var apiKeyInput by remember(apiKey) { mutableStateOf(apiKey) }
+    var baseUrlInput by remember(baseUrl) { mutableStateOf(baseUrl) }
+    var modelInput by remember(model) { mutableStateOf(model) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -60,12 +81,11 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // API Section
             SectionTitle("API 设置")
-            
+
             OutlinedTextField(
                 value = apiKeyInput,
-                onValueChange = { 
+                onValueChange = {
                     apiKeyInput = it
                     viewModel.updateApiKey(it)
                 },
@@ -74,10 +94,10 @@ fun SettingsScreen(
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
-            
+
             OutlinedTextField(
                 value = baseUrlInput,
-                onValueChange = { 
+                onValueChange = {
                     baseUrlInput = it
                     viewModel.updateBaseUrl(it)
                 },
@@ -85,10 +105,10 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
-            
+
             OutlinedTextField(
                 value = modelInput,
-                onValueChange = { 
+                onValueChange = {
                     modelInput = it
                     viewModel.updateModel(it)
                 },
@@ -96,12 +116,10 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
-            
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-            
-            // Approval Mode
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             SectionTitle("安全设置")
-            
             Text("审批模式", style = MaterialTheme.typography.bodyMedium)
             ApprovalMode.entries.forEach { mode ->
                 Row(
@@ -115,12 +133,10 @@ fun SettingsScreen(
                     )
                 }
             }
-            
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-            
-            // Model Parameters
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             SectionTitle("模型参数")
-            
             Text("Max Tokens: $maxTokens")
             Slider(
                 value = maxTokens.toFloat(),
@@ -128,7 +144,7 @@ fun SettingsScreen(
                 valueRange = 1024f..8192f,
                 steps = 7
             )
-            
+
             Text("Temperature: %.1f".format(temperature))
             Slider(
                 value = temperature,
@@ -136,12 +152,10 @@ fun SettingsScreen(
                 valueRange = 0f..1f,
                 steps = 9
             )
-            
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-            
-            // Appearance
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             SectionTitle("外观")
-            
             Text("主题")
             ThemeMode.entries.forEach { mode ->
                 Row(
@@ -155,10 +169,9 @@ fun SettingsScreen(
                     )
                 }
             }
-            
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
-            
-            // About
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             SectionTitle("关于")
             Text("CClaude v${viewModel.getVersion()}")
             Text("基于 libcclaude.so 构建", style = MaterialTheme.typography.bodySmall)

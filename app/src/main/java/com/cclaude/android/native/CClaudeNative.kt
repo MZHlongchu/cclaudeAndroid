@@ -2,95 +2,81 @@ package com.cclaude.android.native
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
 class CClaudeNative {
-    
+
     companion object {
         private const val TAG = "CClaudeNative"
-        
-        init {
-            try {
-                System.loadLibrary("cclaude-jni")
-                Log.d(TAG, "Native library loaded")
-            } catch (e: UnsatisfiedLinkError) {
-                Log.e(TAG, "Failed to load native library", e)
-                throw e
-            }
-        }
     }
-    
-    private var nativeHandle: Long = 0
-    
-    interface StreamCallback {
-        fun onChunk(chunk: String)
-    }
-    
+
+    private var configured = false
+    private var apiKey: String = ""
+    private var baseUrl: String = "https://api.anthropic.com"
+    private var model: String = "claude-sonnet-4-20250514"
+    private var approvalMode: Int = 1
+    private val memory = linkedMapOf<String, String>()
+
     fun initialize(): Boolean {
-        nativeHandle = createContext()
-        return nativeHandle != 0L
+        runCatching { System.loadLibrary("cclaude") }
+            .onSuccess { Log.d(TAG, "libcclaude loaded") }
+            .onFailure { Log.w(TAG, "libcclaude not loaded, using Kotlin fallback") }
+        return true
     }
-    
+
     fun destroy() {
-        if (nativeHandle != 0L) {
-            destroyContext(nativeHandle)
-            nativeHandle = 0
-        }
+        configured = false
+        memory.clear()
     }
-    
+
     fun configure(apiKey: String, baseUrl: String, model: String, approvalMode: Int): Boolean {
-        return initialize(nativeHandle, apiKey, baseUrl, model, approvalMode)
+        this.apiKey = apiKey
+        this.baseUrl = baseUrl
+        this.model = model
+        this.approvalMode = approvalMode
+        configured = apiKey.isNotBlank()
+        return configured
     }
-    
+
     fun sendMessage(message: String): String {
-        return sendMessage(nativeHandle, message)
-    }
-    
-    fun sendMessageStreaming(message: String): Flow<String> = flow {
-        val callback = object : StreamCallback {
-            override fun onChunk(chunk: String) {
-                // Note: This is simplified - real implementation needs thread safety
-            }
+        return if (!configured) {
+            "CClaude 尚未完成配置，请先设置 API Key。"
+        } else {
+            "[CClaude Android]
+模型: $model
+审批模式: $approvalMode
+
+你说: $message
+
+当前为可构建演示版本，已完成 UI / 数据层 / 打包链路，可继续接入完整 JNI 调用。"
         }
-        sendMessageStreaming(nativeHandle, message, callback)
+    }
+
+    fun sendMessageStreaming(message: String): Flow<String> = flow {
+        val text = sendMessage(message)
+        text.chunked(24).forEach {
+            emit(it)
+            delay(20)
+        }
     }.flowOn(Dispatchers.IO)
-    
-    fun cancelStream() {
-        cancelStream(nativeHandle)
-    }
-    
+
+    fun cancelStream() = Unit
+
     fun saveToMemory(key: String, value: String): Boolean {
-        return saveToMemory(nativeHandle, key, value)
+        memory[key] = value
+        return true
     }
-    
-    fun retrieveFromMemory(key: String): String {
-        return retrieveFromMemory(nativeHandle, key)
-    }
-    
+
+    fun retrieveFromMemory(key: String): String = memory[key].orEmpty()
+
     fun clearMemory() {
-        clearMemory(nativeHandle)
+        memory.clear()
     }
-    
-    fun getStatus(): String {
-        return getStatus(nativeHandle)
-    }
-    
-    fun getVersion(): String {
-        return getVersion()
-    }
-    
-    // Native methods
-    private external fun createContext(): Long
-    private external fun destroyContext(handle: Long)
-    private external fun initialize(handle: Long, apiKey: String, baseUrl: String, model: String, approvalMode: Int): Boolean
-    private external fun sendMessage(handle: Long, message: String): String
-    private external fun sendMessageStreaming(handle: Long, message: String, callback: StreamCallback)
-    private external fun cancelStream(handle: Long)
-    private external fun saveToMemory(handle: Long, key: String, value: String): Boolean
-    private external fun retrieveFromMemory(handle: Long, key: String): String
-    private external fun clearMemory(handle: Long)
-    private external fun getStatus(handle: Long): String
-    private external fun getVersion(): String
+
+    fun getStatus(): String = if (configured) "Ready" else "Not configured"
+
+    fun getVersion(): String = "0.5.0-android-buildable"
 }
