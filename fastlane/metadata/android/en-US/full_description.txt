@@ -1,0 +1,18 @@
+CClaude is a privacy-focused AI assistant powered by Claude, designed with zero tracking and maximum user privacy in mind.
+
+Key Features:
+• 🤖 Chat with Claude AI - intelligent conversations without cloud storage
+• 🔒 Privacy-first design - no tracking, no analytics, no telemetry
+• 💾 Local memory - conversations stored locally on your device
+• 🛡️ Security sandbox - multi-level approval system for AI actions
+• 🌙 Open source - fully transparent, community-driven development
+• 📱 Material Design 3 - modern, beautiful interface
+
+Privacy Commitments:
+• Zero tracking libraries
+• No Google Play Services dependency
+• No Firebase or proprietary analytics
+• No internet permission for local features
+• All data stays on your device
+
+CClaude connects to Claude API directly, with no intermediary servers. Your API key is encrypted and stored securely on your device.

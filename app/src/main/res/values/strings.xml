@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CClaude</string>
+    <string name="hint_message">输入消息...</string>
+    <string name="action_send">发送</string>
+    <string name="action_settings">设置</string>
+    <string name="action_new_chat">新对话</string>
+    <string name="action_clear">清空</string>
+    <string name="settings_api_key">API Key</string>
+    <string name="settings_model">模型</string>
+    <string name="settings_approval_mode">审批模式</string>
+    <string name="approval_auto">自动</string>
+    <string name="approval_cautious">谨慎</string>
+    <string name="approval_strict">严格</string>
+    <string name="error_no_api_key">请先设置 API Key</string>
+    <string name="error_network">网络错误，请检查连接</string>
+</resources>

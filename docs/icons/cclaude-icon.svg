@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E57035"/>
+      <stop offset="100%" style="stop-color:#D86028"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)"/>
+  
+  <!-- Letter C -->
+  <path d="M54 28 C38 28 26 40 26 54 C26 68 38 80 54 80 C64 80 72 75 77 68 L70 63 C67 68 61 71 54 71 C44 71 36 63 36 54 C36 45 44 37 54 37 C61 37 67 40 70 45 L77 40 C72 33 64 28 54 28 Z" fill="white"/>
+  
+  <!-- AI Dot -->
+  <circle cx="74" cy="30" r="4" fill="white"/>
+  
+  <!-- Connection Lines -->
+  <line x1="74" y1="34" x2="70" y2="40" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <line x1="74" y1="34" x2="78" y2="40" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</svg>
